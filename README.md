@@ -10,7 +10,7 @@
 
 
 ## Project Structure
-# | Project | Description
+No. | Project | Description
 --|--------|------------
 1|penmgmt.server|All server side projects resides in this folder
 1.1|penmgmt.server.api|

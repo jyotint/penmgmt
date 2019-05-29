@@ -1,3 +1,13 @@
+## How to run Server API (penmgmt.server.api)?
+- Download server api docker image from Docker Hub
+- Download docker-compose.yaml from Server (penmgmt.server)
+- Edit docker-compose.yaml
+    - Update source path in docker-compose.yaml for Sqlite dB folder (services > penmgmt-server-api > volumes > source)
+- Open commnd prompt and traverse to to folder where docker-compose.yaml is downloaded
+    - Traverse to folder where docker-compose.yaml is downloaded
+    - Run "docker-compose up"
+    - Ctrl+C to stop the Server
+
 ## DotNet CLI Commands
 
 Create a new solution
