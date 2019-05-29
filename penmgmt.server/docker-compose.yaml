@@ -1,0 +1,16 @@
+version: "3.7"
+
+services: 
+  penmgmt-server-api:
+    image: penmgmt.server.api.dev:0.1.0
+
+    build: 
+      context: ./penmgmt.server.api/
+      dockerfile: Dockerfile
+
+    ports: 
+      - 8092:80
+    volumes: 
+      - type: bind
+        source: //E/Projects/NGC1976/penmgmt/data/sqlite3/ 
+        target: /var/lib/penmgmt

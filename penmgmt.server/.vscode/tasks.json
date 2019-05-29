@@ -1,0 +1,71 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "penmgmt.server.api - docker build & clean",
+            "dependsOn": [
+                "penmgmt.server.api - docker build (llt)"
+                , "penmgmt.server.api - docker cleanup dangling images (llt)"
+            ]
+        }
+        ,{
+            "label": "penmgmt.server.api - docker run",
+            "type": "shell",
+            "command": "docker run -itd --rm -p 8092:80 penmgmt.server.api.dev:0.1.0",
+            "args": []
+        }
+        ,{
+            "label": "penmgmt.server.api - docker build (llt)",
+            "type": "shell",
+            "command": "docker build --rm -f penmgmt.server.api/Dockerfile -t penmgmt.server.api.dev:0.1.0 ./penmgmt.server.api",
+            "args": []
+        }
+        ,{
+            "label": "penmgmt.server.api - docker cleanup dangling images (llt)",
+            "type": "shell",
+            "command": "docker image rm $(docker images -q -f dangling=true)",
+            "args": []
+        }
+        ,{
+            "label": "solution - build",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "${workspaceFolder}/penmgmt.server.sln"
+            ],
+            "problemMatcher": "$tsc"
+        }
+        ,{
+            "label": "penmgmt.server.api - build",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "${workspaceFolder}/penmgmt.server.api/penmgmt.server.api.csproj"
+            ],
+            "problemMatcher": "$tsc"
+        }
+        ,{
+            "label": "penmgmt.server.api - publish",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "publish",
+                "${workspaceFolder}/penmgmt.server.api/penmgmt.server.api.csproj"
+            ],
+            "problemMatcher": "$tsc"
+        }
+        // ,{
+        //     "label": "watch",
+        //     "command": "dotnet",
+        //     "type": "process",
+        //     "args": [
+        //         "watch",
+        //         "run",
+        //         "${workspaceFolder}/penmgmt.server.api/penmgmt.server.api.csproj"
+        //     ],
+        //     "problemMatcher": "$tsc"
+        // }
+    ]
+}
