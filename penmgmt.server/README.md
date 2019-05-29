@@ -1,12 +1,16 @@
 ## How to run Server API (penmgmt.server.api)?
-- Download server api docker image from Docker Hub
-- Download docker-compose.yaml from Server (penmgmt.server)
+- Run Docker and switch to Linux Containers
+- Download Server docker image from Docker Hub
+- Download docker-compose.yaml from Server (penmgmt.server) folder On Github
 - Edit docker-compose.yaml
-    - Update source path in docker-compose.yaml for Sqlite dB folder (services > penmgmt-server-api > volumes > source)
-- Open commnd prompt and traverse to to folder where docker-compose.yaml is downloaded
+    - For Server API (edit elements under "penmgmt-server-api")
+        - Update "source" path of "Volumes" to local path (services > penmgmt-server-api > volumes > source). This is where database file will reside
+        - Make a note of first part of "ports". Server API will be running on this port. Ex. http://localhost:8092/api/v1/partmaster
+- Open Commnd Prompt and traverse to to folder where docker-compose.yaml is downloaded
     - Traverse to folder where docker-compose.yaml is downloaded
     - Run "docker-compose up"
-    - Ctrl+C to stop the Server
+    - Ctrl+C to stop the Server API
+
 
 ## DotNet CLI Commands
 
