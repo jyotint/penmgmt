@@ -1,10 +1,3 @@
-## Quotes
-> Clean Architecture
->   The architecture should be independent of framwworks.
-
-> Simplicity is the ultimate sophistication - Leonardo Da Vinci
-
-
 ## DotNet CLI Commands
 
 Create a new solution

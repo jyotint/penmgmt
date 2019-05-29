@@ -14,7 +14,7 @@ using PenMgmt.Server.Persistence.UnitOfWork;
 namespace PenMgmt.Server.Api.Controllers
 {
     // FIXME: Implement Asynchronous processing
-    [Route("api/[controller]")]
+    [Route("api/v1/[controller]")]
     [ApiController]
     public class PartMasterController : ControllerBase
     {

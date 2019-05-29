@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace PenMgmt.Server.Api.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/v1/[controller]")]
     [ApiController]
     public class ValuesController : ControllerBase
     {
