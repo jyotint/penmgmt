@@ -31,3 +31,5 @@ No. | Project | Description
     - Prettier - Code formatter by Esben Petersen
     - Todo Tree by Gruntfuggly
     - YAML by Red Hat
+- Postman
+- SQLiteStudio
