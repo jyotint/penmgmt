@@ -7,8 +7,8 @@ namespace PenMgmt.Server.Persistence.Repository
 {
     public interface IPartMasterRepository : IBaseRepository<PartMaster>
     {
-        PartMaster SingleById(string id);
+        PartMaster SingleById(string id, int deleted = 0);
 
-        PartMaster SingleByCode(string code);
+        PartMaster SingleByCode(string code, int deleted = 0);
     }
 }

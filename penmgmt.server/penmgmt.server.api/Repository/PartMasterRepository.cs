@@ -20,13 +20,13 @@ namespace PenMgmt.Server.Persistence.Repository
             get { return _dbContext as PenMgmtContext; }
         }
 
-        public PartMaster SingleById(string id)
+        public PartMaster SingleById(string id, int deleted = 0)
         {
             PartMaster result = null;
 
             try
             {
-                result = PenMgmtDbContext.PartMasters.Single(v => v.Id == id);
+                result = PenMgmtDbContext.PartMasters.Single(v => (v.Id == id && v.Deleted == deleted));
             }
             catch (System.Exception)
             {
@@ -37,13 +37,13 @@ namespace PenMgmt.Server.Persistence.Repository
             return result;
         }
 
-        public PartMaster SingleByCode(string code)
+        public PartMaster SingleByCode(string code, int deleted = 0)
         {
             PartMaster result = null;
 
             try
             {
-                result = PenMgmtDbContext.PartMasters.Single(v => v.Code == code);
+                result = PenMgmtDbContext.PartMasters.Single(v => (v.Code == code && v.Deleted == deleted));
             }
             catch (System.Exception)
             {
