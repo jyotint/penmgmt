@@ -27,7 +27,7 @@
             "args": []
         }
         ,{
-            "label": "solution - build",
+            "label": "build",
             "command": "dotnet",
             "type": "process",
             "args": [

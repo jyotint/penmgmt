@@ -33,14 +33,25 @@ namespace PenMgmt.Server.Api.Controllers
         [HttpGet]
         public ActionResult<IEnumerable<PartMaster>> Get()
         {
-            // const string Message = "PartMasterController::Get()...";
-            // System.Diagnostics.Debug.WriteLine(Message);
-
             List<PartMaster> result = null;
 
-            using (var db = new PenMgmtContext(_appLogger, _appSettingsDataStore))
+            try
             {
-                result = db.PartMasters.ToList();
+                // const string Message = "PartMasterController::Get()...";
+                // System.Diagnostics.Debug.WriteLine(Message);
+
+                using (var context = new PenMgmtContext(_appLogger, _appSettingsDataStore))
+                {
+                    var filteredList = context.PartMasters
+                                            .AsEnumerable()
+                                            .Where(pm => pm.Deleted == Constants.DB_Not_Deleted);
+                    result = filteredList.ToList();
+                }
+            }
+            catch (System.Exception ex)
+            {
+                HttpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                _appLogger.LogError($"EXCEPTION: PartMasterController::Get() >> StatusCode: {HttpContext.Response.StatusCode}, Message: '{ex.Message}'");
             }
 
             return result;
@@ -54,10 +65,10 @@ namespace PenMgmt.Server.Api.Controllers
 
             try
             {
-                using (var db = new PenMgmtContext(_appLogger, _appSettingsDataStore))
-                using (var uow = new UnitOfWork(db))
+                using (var context = new PenMgmtContext(_appLogger, _appSettingsDataStore))
+                using (var uow = new UnitOfWork(context))
                 {
-                    result = uow.PartMasters.SingleById(id);
+                    result = uow.PartMasters.SingleById(id, Constants.DB_Not_Deleted);
                     if (result == null)
                     {
                         HttpContext.Response.StatusCode = StatusCodes.Status404NotFound;
@@ -78,25 +89,36 @@ namespace PenMgmt.Server.Api.Controllers
         [HttpPost]
         public void Post([FromBody] PartMaster value)
         {
-            var valid = Validate(HttpMethods.Post, value, null);
-            if (valid)
+            try
             {
-                using (var db = new PenMgmtContext(_appLogger, _appSettingsDataStore))
-                using (var uow = new UnitOfWork(db))
+                var valid = Validate(HttpMethods.Post, value, null);
+                if (valid)
                 {
-                    var now = DateTime.Now;
+                    using (var context = new PenMgmtContext(_appLogger, _appSettingsDataStore))
+                    using (var uow = new UnitOfWork(context))
+                    {
+                        var now = DateTime.Now;
 
-                    value.Id = Guid.NewGuid().ToString();
-                    value.CreatedOn = now;
-                    value.UpdatedOn = now;
-                    uow.PartMasters.Add(value);
-                    uow.Complete();
+                        // System Properties
+                        value.Id = Guid.NewGuid().ToString();
+                        value.Deleted = Constants.DB_Deleted_Default;
+                        value.CreatedOn = now;
+                        value.UpdatedOn = now;
+
+                        uow.PartMasters.Add(value);
+                        uow.Complete();
+                    }
+                }
+                else
+                {
+                    HttpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
+                    _appLogger.LogError($"PartMasterController::Post() >> StatusCode: {HttpContext.Response.StatusCode}");
                 }
             }
-            else
+            catch (System.Exception ex)
             {
-                HttpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
-                _appLogger.LogError($"PartMasterController::Post() >> StatusCode: {HttpContext.Response.StatusCode}");
+                HttpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                _appLogger.LogError($"EXCEPTION: PartMasterController::Post() >> StatusCode: {HttpContext.Response.StatusCode}, Message: '{ex.Message}'");
             }
         }
 
@@ -104,32 +126,50 @@ namespace PenMgmt.Server.Api.Controllers
         [HttpPut("{id}")]
         public void Put(string id, [FromBody] PartMaster value)
         {
-            var valid = Validate(HttpMethods.Put, value, id);
-            if (valid)
+            try
             {
-                using (var db = new PenMgmtContext(_appLogger, _appSettingsDataStore))
-                using (var uow = new UnitOfWork(db))
+                var valid = Validate(HttpMethods.Put, value, id);
+                if (valid)
                 {
-                    var result = uow.PartMasters.SingleById(id);
-                    if (result != null)
+                    using (var context = new PenMgmtContext(_appLogger, _appSettingsDataStore))
+                    using (var uow = new UnitOfWork(context))
                     {
-                        var now = DateTime.Now;
+                        var result = uow.PartMasters.SingleById(id, Constants.DB_Not_Deleted);
+                        if (result != null)
+                        {
+                            //if(result.Deleted == 0 && result.Committed == 0)
+                            var now = DateTime.Now;
 
-                        result = value;
-                        value.UpdatedOn = now;
-                        uow.Complete();
-                    }
-                    else
-                    {
-                        HttpContext.Response.StatusCode = StatusCodes.Status404NotFound;
-                        _appLogger.LogError($"PartMasterController::Put('{id}') >> StatusCode: {HttpContext.Response.StatusCode}");
+                            // Modifiable Properties 
+                            result.Description = value.Description;
+                            result.Count = value.Count;
+                            result.Weight = value.Weight;
+                            // Once Committed flag is set, it can't be unset
+                            if (result.Committed != Constants.DB_Committed)
+                                result.Committed = value.Committed;
+
+                            // System Properties
+                            result.UpdatedOn = now;
+
+                            uow.Complete();
+                        }
+                        else
+                        {
+                            HttpContext.Response.StatusCode = StatusCodes.Status404NotFound;
+                            _appLogger.LogError($"PartMasterController::Put('{id}') >> StatusCode: {HttpContext.Response.StatusCode}");
+                        }
                     }
                 }
+                else
+                {
+                    HttpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
+                    _appLogger.LogError($"PartMasterController::Put('{id}') >> StatusCode: {HttpContext.Response.StatusCode}");
+                }
             }
-            else
+            catch (System.Exception ex)
             {
-                HttpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
-                _appLogger.LogError($"PartMasterController::Put('{id}') >> StatusCode: {HttpContext.Response.StatusCode}");
+                HttpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                _appLogger.LogError($"EXCEPTION: PartMasterController::Put('{id}') >> StatusCode: {HttpContext.Response.StatusCode}, Message: '{ex.Message}'");
             }
         }
 
@@ -137,20 +177,34 @@ namespace PenMgmt.Server.Api.Controllers
         [HttpDelete("{id}")]
         public void Delete(string id)
         {
-            // FIXME: Delete should be soft delete
-            using (var db = new PenMgmtContext(_appLogger, _appSettingsDataStore))
-            using (var uow = new UnitOfWork(db))
+            try
             {
-                var result = uow.PartMasters.SingleById(id);
-                if (result != null)
+                using (var context = new PenMgmtContext(_appLogger, _appSettingsDataStore))
+                using (var uow = new UnitOfWork(context))
                 {
-                    uow.PartMasters.Remove(result);
-                    uow.Complete();
+                    var result = uow.PartMasters.SingleById(id, Constants.DB_Not_Deleted);
+                    if (result != null)
+                    {
+                        var now = DateTime.Now;
+
+                        // System Properties
+                        // Only Soft delete
+                        result.Deleted = Constants.DB_Deleted;
+                        result.UpdatedOn = now;
+
+                        uow.Complete();
+                    }
+                    else
+                    {
+                        HttpContext.Response.StatusCode = StatusCodes.Status404NotFound;
+                        _appLogger.LogError($"PartMasterController::Delete('{id}') >> NO ERROR THROWN [Silent Failure] StatusCode: {StatusCodes.Status400BadRequest}");
+                    }
                 }
-                else
-                {
-                    _appLogger.LogError($"PartMasterController::Delete('{id}') >> NO ERROR THROWN [Silent Failure] StatusCode: {StatusCodes.Status400BadRequest}");
-                }
+            }
+            catch (System.Exception ex)
+            {
+                HttpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                _appLogger.LogError($"EXCEPTION: PartMasterController::Delete('{id}') >> StatusCode: {HttpContext.Response.StatusCode}, Message: '{ex.Message}'");
             }
         }
 
