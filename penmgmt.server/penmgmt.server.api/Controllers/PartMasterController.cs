@@ -29,71 +29,82 @@ namespace PenMgmt.Server.Api.Controllers
             _appSettingsDataStore = appSettingsDataStore.Value;
         }
 
+        #region Public REST Methods
+
         // GET api/partmaster
         [HttpGet]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public ActionResult<IEnumerable<PartMaster>> Get()
         {
-            List<PartMaster> result = null;
-
             try
             {
-                // const string Message = "PartMasterController::Get()...";
-                // System.Diagnostics.Debug.WriteLine(Message);
-
                 using (var context = new PenMgmtContext(_appLogger, _appSettingsDataStore))
                 {
                     var filteredList = context.PartMasters
                                             .AsEnumerable()
-                                            .Where(pm => pm.Deleted == Constants.DB_Not_Deleted);
-                    result = filteredList.ToList();
+                                            .Where(pm => pm.Deleted == Constants.DB.NotDeleted);
+                    return filteredList.ToList();
                 }
             }
             catch (System.Exception ex)
             {
-                HttpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
-                _appLogger.LogError($"EXCEPTION: PartMasterController::Get() >> StatusCode: {HttpContext.Response.StatusCode}, Message: '{ex.Message}'");
+                return InternalServerError(nameof(Get), Constants.Message.TitleGetObjects, ex);
             }
-
-            return result;
         }
 
         // GET api/partmaster/5
-        [HttpGet("{id}")]
-        public ActionResult<PartMaster> Get(string id)
+        [HttpGet("{id}", Name = nameof(GetObjectById))]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public ActionResult<PartMaster> GetObjectById(string id)
         {
-            PartMaster result = null;
+            string methodName = nameof(GetObjectById), title = Constants.Message.TitleGetObjectById;
 
             try
             {
                 using (var context = new PenMgmtContext(_appLogger, _appSettingsDataStore))
                 using (var uow = new UnitOfWork(context))
                 {
-                    result = uow.PartMasters.SingleById(id, Constants.DB_Not_Deleted);
-                    if (result == null)
+                    // For testing
+                    // throw new Exception($"Testing method {methodName}..................");
+
+                    var result = GetById(uow, id);
+                    if (result != null)
                     {
-                        HttpContext.Response.StatusCode = StatusCodes.Status404NotFound;
-                        _appLogger.LogError($"PartMasterController::Get('{id}') >> StatusCode: {HttpContext.Response.StatusCode}");
+                        return result;
+                    }
+                    else
+                    {
+                        return NotFoundError(methodName, title, id);
                     }
                 }
             }
             catch (System.Exception ex)
             {
-                HttpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
-                _appLogger.LogError($"EXCEPTION: PartMasterController::Get('{id}') >> StatusCode: {HttpContext.Response.StatusCode}, Message: '{ex.Message}'");
+                return InternalServerError(methodName, title, ex);
             }
-
-            return result;
         }
 
         // POST api/partmaster
         [HttpPost]
-        public void Post([FromBody] PartMaster value)
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public ActionResult<PartMaster> Create([FromBody] PartMaster value)
         {
+            string methodName = nameof(Create), title = Constants.Message.TitleCreateObject;
+            List<string> validationFailureMessages;
+
             try
             {
-                var valid = Validate(HttpMethods.Post, value, null);
-                if (valid)
+                var isValid = ValidateRequest(HttpMethods.Post, value, null, out validationFailureMessages);
+                if (isValid)
                 {
+                    // For testing
+                    // throw new Exception($"Testing method {nameof(Create)}..................");
+
                     using (var context = new PenMgmtContext(_appLogger, _appSettingsDataStore))
                     using (var uow = new UnitOfWork(context))
                     {
@@ -101,134 +112,267 @@ namespace PenMgmt.Server.Api.Controllers
 
                         // System Properties
                         value.Id = Guid.NewGuid().ToString();
-                        value.Deleted = Constants.DB_Deleted_Default;
+                        value.Deleted = Constants.DB.DeletedDefault;
                         value.CreatedOn = now;
                         value.UpdatedOn = now;
 
                         uow.PartMasters.Add(value);
+                        // Commit the change
                         uow.Complete();
+
+                        // Return the created object
+                        var result = GetById(uow, value.Id);
+                        return CreatedAtRoute(nameof(GetObjectById), new { id = value.Id }, result);
                     }
                 }
                 else
                 {
-                    HttpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
-                    _appLogger.LogError($"PartMasterController::Post() >> StatusCode: {HttpContext.Response.StatusCode}");
+                    var errorMessage = GetFlattenedMessage(validationFailureMessages, Constants.Message.ValidationFailed);
+                    return BadRequestError(methodName, title, null, errorMessage);
                 }
             }
             catch (System.Exception ex)
             {
-                HttpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
-                _appLogger.LogError($"EXCEPTION: PartMasterController::Post() >> StatusCode: {HttpContext.Response.StatusCode}, Message: '{ex.Message}'");
+                return InternalServerError(methodName, title, ex);
             }
         }
 
         // PUT api/partmaster/5
         [HttpPut("{id}")]
-        public void Put(string id, [FromBody] PartMaster value)
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public ActionResult<PartMaster> Update(string id, [FromBody] PartMaster value)
         {
+            string methodName = nameof(Update), title = Constants.Message.TitleUpdateObject;
+            List<string> validationFailureMessages;
+
             try
             {
-                var valid = Validate(HttpMethods.Put, value, id);
-                if (valid)
+                var isValid = ValidateRequest(HttpMethods.Put, value, id, out validationFailureMessages);
+                if (isValid)
                 {
                     using (var context = new PenMgmtContext(_appLogger, _appSettingsDataStore))
                     using (var uow = new UnitOfWork(context))
                     {
-                        var result = uow.PartMasters.SingleById(id, Constants.DB_Not_Deleted);
+                        var result = uow.PartMasters.SingleById(id, Constants.DB.NotDeleted);
                         if (result != null)
                         {
-                            //if(result.Deleted == 0 && result.Committed == 0)
-                            var now = DateTime.Now;
+                            // Only valid (not deleted) and un-committed object can be updated
+                            if (result.Deleted == Constants.DB.NotDeleted && result.Committed == Constants.DB.NotCommitted)
+                            {
+                                var now = DateTime.Now;
 
-                            // Modifiable Properties 
-                            result.Description = value.Description;
-                            result.Count = value.Count;
-                            result.Weight = value.Weight;
-                            // Once Committed flag is set, it can't be unset
-                            if (result.Committed != Constants.DB_Committed)
+                                // Modifiable Properties 
+                                result.Description = value.Description;
+                                result.Count = value.Count;
+                                result.Weight = value.Weight;
                                 result.Committed = value.Committed;
 
-                            // System Properties
-                            result.UpdatedOn = now;
+                                // System Properties
+                                result.UpdatedOn = now;
 
-                            uow.Complete();
+                                // Commit the changes
+                                uow.Complete();
+
+                                // Return the updated object
+                                return GetById(uow, value.Id);
+                            }
+                            else
+                            {
+                                return BadRequestError(methodName, title, id, Constants.Message.CommittedObjectCantBeModified);
+                            }
                         }
                         else
                         {
-                            HttpContext.Response.StatusCode = StatusCodes.Status404NotFound;
-                            _appLogger.LogError($"PartMasterController::Put('{id}') >> StatusCode: {HttpContext.Response.StatusCode}");
+                            return NotFoundError(methodName, title, id);
                         }
-                    }
+                    }   // End of USING
                 }
                 else
                 {
-                    HttpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
-                    _appLogger.LogError($"PartMasterController::Put('{id}') >> StatusCode: {HttpContext.Response.StatusCode}");
+                    var errorMessage = GetFlattenedMessage(validationFailureMessages, Constants.Message.ValidationFailed);
+                    return BadRequestError(methodName, title, id, errorMessage);
                 }
             }
             catch (System.Exception ex)
             {
-                HttpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
-                _appLogger.LogError($"EXCEPTION: PartMasterController::Put('{id}') >> StatusCode: {HttpContext.Response.StatusCode}, Message: '{ex.Message}'");
+                return InternalServerError(methodName, title, ex);
             }
         }
 
         // DELETE api/partmaster/5
         [HttpDelete("{id}")]
-        public void Delete(string id)
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public ActionResult Delete(string id)
         {
+            string methodName = nameof(Delete), title = Constants.Message.TitleDeleteObject;
+
             try
             {
                 using (var context = new PenMgmtContext(_appLogger, _appSettingsDataStore))
                 using (var uow = new UnitOfWork(context))
                 {
-                    var result = uow.PartMasters.SingleById(id, Constants.DB_Not_Deleted);
+                    var result = uow.PartMasters.SingleById(id, Constants.DB.NotDeleted);
                     if (result != null)
                     {
-                        var now = DateTime.Now;
+                        if (result.Deleted == Constants.DB.NotDeleted)
+                        {
+                            var now = DateTime.Now;
 
-                        // System Properties
-                        // Only Soft delete
-                        result.Deleted = Constants.DB_Deleted;
-                        result.UpdatedOn = now;
+                            // System Properties
+                            // Only Soft delete
+                            result.Deleted = Constants.DB.Deleted;
+                            result.UpdatedOn = now;
 
-                        uow.Complete();
+                            uow.Complete();
+
+                            return Ok();
+                        }
+                        else
+                        {
+                            return BadRequestError(methodName, title, id, Constants.Message.ObjectAlreadyDeleted);
+                        }
                     }
                     else
                     {
-                        HttpContext.Response.StatusCode = StatusCodes.Status404NotFound;
-                        _appLogger.LogError($"PartMasterController::Delete('{id}') >> NO ERROR THROWN [Silent Failure] StatusCode: {StatusCodes.Status400BadRequest}");
+                        return NotFoundError(methodName, title, id);
                     }
-                }
+                }   // End of USING
             }
             catch (System.Exception ex)
             {
-                HttpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
-                _appLogger.LogError($"EXCEPTION: PartMasterController::Delete('{id}') >> StatusCode: {HttpContext.Response.StatusCode}, Message: '{ex.Message}'");
+                return InternalServerError(methodName, title, ex);
             }
         }
 
-        private bool Validate(string httpMethod, PartMaster value, object param1)//, params object[] list)
+        #endregion //Public REST Methods
+
+        #region Private Methods
+
+        private PartMaster GetById(UnitOfWork uow, string id)
         {
-            bool result = false;
+            return uow.PartMasters.SingleById(id, Constants.DB.NotDeleted);
+        }
+
+        private bool ValidateRequest(
+            string httpMethod,
+            PartMaster value,
+            object param1,
+            out List<string> validationFailureMessages)
+        {
+            bool result = true;
+            validationFailureMessages = new List<string>();
 
             if (HttpMethods.IsPost(httpMethod))
             {
-                //result = (list.Length == 0) ? true : false; 
-                //result = result && ((value.Id == null) ? true : false);
-                result = (value.Id == null) ? true : false;
+                if (value.Id != null)
+                {
+                    result = false;
+                    validationFailureMessages.Add(Constants.Message.ValidationFailedIdShouldBeNull);
+                }
             }
 
             if (HttpMethods.IsPut(httpMethod))
             {
-                //result = (list.Length > 0) ? true : false; 
-                // result = result && ((value.Id == list[0].ToString()) ? true : false);
-                result = (value.Id == param1.ToString()) ? true : false;
+                if (value.Id != param1.ToString())
+                {
+                    result = false;
+                    validationFailureMessages.Add(Constants.Message.ValidationFailedIdsShouldMatch);
+                }
             }
 
-            //System.Diagnostics.Debug.WriteLine($"PartMaster Controller::Validate() >> Result = {result}, HttpMethod: {httpMethod}, List Length: {list.Length}.");
-            System.Diagnostics.Debug.WriteLine($"PartMasterController::Validate(httpMethod: {httpMethod}, <value>, param1: {param1}) >> Result = {result}.");
+            //_appLogger.LogError(($"PartMaster Controller::Validate() >> Result = {result}, HttpMethod: {httpMethod}, List Length: {list.Length}.");
+            _appLogger.LogError($"PartMasterController::Validate(httpMethod: {httpMethod}, <value>, param1: {param1}) >> Result = {result}.");
             return result;
         }
+
+        private ObjectResult InternalServerError(
+            string methodName,
+            string title,
+            Exception ex)
+        {
+            var statusCode = StatusCodes.Status500InternalServerError;
+            var errorMessage = string.Format($"EXCEPTION: PartMasterController::{methodName}() >> StatusCode: {statusCode}, Message: '{ex.Message}'");
+            var problemDetail = new ProblemDetails()
+            {
+                Status = statusCode,
+                Instance = HttpContext.Request.Path,
+                Title = title,
+                Detail = errorMessage
+            };
+
+            _appLogger.LogError(errorMessage);
+            return new ObjectResult(problemDetail)
+            {
+                ContentTypes = { Constants.Http.ContentType },
+                StatusCode = StatusCodes.Status500InternalServerError
+            };
+        }
+
+        private NotFoundObjectResult NotFoundError(
+            string methodName,
+            string title,
+            string id)
+        {
+            var statusCode = StatusCodes.Status404NotFound;
+            var problemDetail = new ProblemDetails()
+            {
+                Status = statusCode,
+                Instance = HttpContext.Request.Path,
+                Title = title,
+                Detail = string.Format($"PartMaster object with id '{id}' not found.")
+            };
+
+            _appLogger.LogError($"PartMasterController::{methodName}('{id}') >> StatusCode: {statusCode}");
+            return new NotFoundObjectResult(problemDetail)
+            {
+                ContentTypes = { Constants.Http.ContentType },
+                StatusCode = StatusCodes.Status404NotFound
+            };
+        }
+
+        private BadRequestObjectResult BadRequestError(
+            string methodName,
+            string title,
+            string id,
+            string messageDetail)
+        {
+            var statusCode = StatusCodes.Status400BadRequest;
+            var problemDetail = new ProblemDetails()
+            {
+                Status = statusCode,
+                Instance = HttpContext.Request.Path,
+                Title = title,
+                Detail = messageDetail
+            };
+
+            _appLogger.LogError($"PartMasterController::{methodName}('{id}') >> StatusCode: {statusCode}");
+            return new BadRequestObjectResult(problemDetail)
+            {
+                ContentTypes = { Constants.Http.ContentType },
+                StatusCode = StatusCodes.Status400BadRequest
+            };
+        }
+
+        private string GetFlattenedMessage(List<string> messageList, string defaultMessage)
+        {
+            defaultMessage = defaultMessage ?? "(no default message set)";
+            var message = (messageList == null)
+                            ? defaultMessage
+                            : (
+                                    (messageList.Count == 0)
+                                        ? defaultMessage
+                                        : string.Join(", ", messageList)
+                                );
+
+            return message;
+        }
+
+        #endregion //Private Methods
     }
 }

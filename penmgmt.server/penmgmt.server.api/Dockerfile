@@ -3,6 +3,7 @@
 
 # Download Runtime
 FROM microsoft/dotnet:2.2-aspnetcore-runtime AS base
+RUN mkdir ./../var/lib/penmgmt
 WORKDIR /app
 EXPOSE 80
 
@@ -40,6 +41,5 @@ RUN dotnet publish "penmgmt.server.api.csproj" -c Release -o /app
 # Setup EntryPoint
 FROM base AS final
 WORKDIR /app
-RUN mkdir ./../var/lib/penmgmt
 COPY --from=publish /app .
 ENTRYPOINT ["dotnet", "penmgmt.server.api.dll"]
