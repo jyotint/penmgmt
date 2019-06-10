@@ -37,7 +37,7 @@ namespace PenMgmt.Server.Api
 
             // Dependency Injection
             services.AddSingleton<IAppLogger>(new AppLogger());
-            services.Configure<AppSettingsDataStore>(Configuration.GetSection("DataStore"));
+            services.Configure<AppSettingsDataStore>(Configuration.GetSection(Constants.AppConfiguration.DataStore));
             services.AddDbContext<PenMgmtContext>();
         }
 

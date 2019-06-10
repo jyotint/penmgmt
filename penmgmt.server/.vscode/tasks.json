@@ -11,13 +11,13 @@
         ,{
             "label": "penmgmt.server.api - docker run",
             "type": "shell",
-            "command": "docker run -itd --rm -p 8092:80 jyotint/images:penmgmt.server.api.0.1.1",
+            "command": "docker run -itd --rm -p 8092:80 jyotint/images:penmgmt.server.api.0.1.2",
             "args": []
         }
         ,{
             "label": "penmgmt.server.api - docker build (llt)",
             "type": "shell",
-            "command": "docker build --rm -f penmgmt.server.api/Dockerfile -t jyotint/images:penmgmt.server.api.0.1.1 ./penmgmt.server.api",
+            "command": "docker build --rm -f penmgmt.server.api/Dockerfile -t jyotint/images:penmgmt.server.api.0.1.2 ./penmgmt.server.api",
             "args": []
         }
         ,{

@@ -2,7 +2,7 @@ version: "3.7"
 
 services: 
   penmgmt-server-api:
-    image: jyotint/images:penmgmt.server.api.0.1.1
+    image: jyotint/images:penmgmt.server.api.0.1.2
 
     build: 
       context: ./penmgmt.server.api/
