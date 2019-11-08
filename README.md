@@ -5,7 +5,7 @@
 ## Important Quotes
 
 > Clean Architecture -
-> The architecture should be independent of framwworks.
+> The architecture should be independent of frameworks.
 >
 > Simplicity is the ultimate sophistication - Leonardo Da Vinci
 
