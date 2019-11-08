@@ -20,8 +20,8 @@ No. | Project | Description
 
 ## Tools Used
 
-- DotNet CLI v2.2 (.NET Command Line Tools to execute a .NET Core application)
 - Docker for Windows
+- .NET Core CLI v2.2 (.NET Command Line Tools to execute a .NET Core application)
 - Visual Studio Code
 - Visual Studio Code (Extensions)
   - C# by Microsoft
