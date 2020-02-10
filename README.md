@@ -1,8 +1,8 @@
 # PenMgmt
 
-## Overview
+**Technologies Used:** C#, .NET Core, SQLLite, Docker, Docker-Compose
 
-C#, .NET Core, SQLLite, Docker, Docker-Compose
+## Overview
 
 ## Important Quotes
 
