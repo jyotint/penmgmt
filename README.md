@@ -1,6 +1,8 @@
-# penmgmt Readme
+# PenMgmt
 
 ## Overview
+
+C#, .NET Core, SQLLite, Docker, Docker-Compose
 
 ## Important Quotes
 
